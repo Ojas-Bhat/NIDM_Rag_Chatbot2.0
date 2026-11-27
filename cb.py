@@ -159,7 +159,6 @@ async def query_llm_async(prompt: str) -> str:
 async def generate_answer_async(
     user_query: str,
     retrieved: List[Dict[str, Any]],
-    model: str = "phi3:mini",   # <-- small model for low RAM
 ) -> Dict[str, Any]:
     if not retrieved:
         return {
@@ -220,10 +219,8 @@ Answer:"""
 def generate_answer(
     user_query: str,
     retrieved: List[Dict[str, Any]],
-    model: str = "phi3:mini",
 ) -> Dict[str, Any]:
-    return asyncio.run(generate_answer_async(user_query, retrieved, model))
-
+    return asyncio.run(generate_answer_async(user_query, retrieved))
 
 # --- Example Usage ---
 if __name__ == "__main__":
