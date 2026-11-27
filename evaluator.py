@@ -2,8 +2,6 @@ import pandas as pd
 import asyncio
 import json
 import os
-from sentence_transformers import SentenceTransformer
-import asyncio
 
 # Load your retrieval and generation logic from cb.py
 from cb import retrieve_relevant_chunks, generate_answer_async, query_llm_async
@@ -21,7 +19,7 @@ async def evaluate_rag():
     df = pd.read_csv("eval_questions1.csv")
     results = []
 
-    print(f"🚀 Starting evaluation of {len(df)} questions...")
+    print(f"Starting evaluation of {len(df)} questions with Reranking + top_k=5...")
 
     for idx, row in df.iterrows():
         question = row["question"]
@@ -29,15 +27,14 @@ async def evaluate_rag():
 
         print(f"\n[{idx+1}/{len(df)}] Query: {question}")
 
-        # 2. RAG Pipeline: Retrieve + Generate
-        retrieved = retrieve_relevant_chunks(question, top_k=3)
+        # 2. RAG Pipeline: Retrieve + Generate (now top_k=5 with cross-encoder reranker)
+        retrieved = retrieve_relevant_chunks(question, top_k=5)
         response = await generate_answer_async(question, retrieved)
 
         generated_answer = response["answer"]
         sources = [s["document"] for s in response["sources"]]
 
         # 3. LLM-as-a-Judge: Score the result
-        # We ask the LLM to compare generated vs expected based only on the context provided
         judge_prompt = f"""
         You are an impartial evaluator for a RAG system.
         Evaluate the 'Generated Answer' based on the 'Expected Answer' and the 'User Question'.
@@ -76,8 +73,8 @@ async def evaluate_rag():
             "scores": scores
         })
 
-        # Small sleep to respect Groq rate limits if needed
-        await asyncio.sleep(1)
+        # 2-second delay to stay well within Groq rate limits
+        await asyncio.sleep(2)
 
     # 4. Save and Report
     with open("eval_results.json", "w", encoding="utf-8") as f:
@@ -89,7 +86,7 @@ async def evaluate_rag():
     avg_acc = sum(r["scores"]["accuracy"] for r in results) / len(results)
 
     print("\n" + "="*30)
-    print("📊 EVALUATION SUMMARY")
+    print("📊 EVALUATION SUMMARY (Reranked)")
     print("="*30)
     print(f"Avg Relevance:   {avg_rel:.2f}")
     print(f"Avg Faithfulness: {avg_fai:.2f}")
