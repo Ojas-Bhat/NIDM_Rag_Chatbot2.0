@@ -1,0 +1,23 @@
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+
+# Environment variables and secrets
+.env
+.env.*
+
+# RAG data and generated files
+data/
+indices/
+ocr_cache/
+
+# Temporary files
+*.log
+.DS_Store
+.ipynb_checkpoints/
