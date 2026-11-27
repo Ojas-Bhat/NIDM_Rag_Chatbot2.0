@@ -1,3 +1,4 @@
+# cb.py
 import asyncio
 import logging
 import os
@@ -10,13 +11,13 @@ import faiss
 import numpy as np
 from dotenv import load_dotenv
 from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, CrossEncoder
 
 load_dotenv()
 
 # --- Providers ---
-LLM_PROVIDER   = os.getenv("LLM_PROVIDER", "groq")        # "groq" | "ollama"
-GROQ_MODEL     = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+LLM_PROVIDER   = os.getenv("LLM_PROVIDER", "groq")
+GROQ_MODEL     = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 OLLAMA_MODEL   = os.getenv("OLLAMA_MODEL", "phi3:mini")
 
 try:
@@ -35,29 +36,30 @@ except ImportError:
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-SCRIPT_DIR  = Path(__file__).resolve().parent
-INDEX_DIR   = SCRIPT_DIR / "indices"
-FAISS_PATH  = INDEX_DIR / "faiss_index.bin"
-BM25_PATH   = INDEX_DIR / "bm25.pkl"
-CHUNKS_PATH = INDEX_DIR / "chunks_meta.pkl"
+# --- Paths ---
+SCRIPT_DIR   = Path(__file__).resolve().parent
+INDEX_DIR    = SCRIPT_DIR / "indices"
+FAISS_PATH   = INDEX_DIR / "faiss_index.bin"
+BM25_PATH    = INDEX_DIR / "bm25.pkl"
+CHUNKS_PATH  = INDEX_DIR / "chunks_meta.pkl"
 
-
-
-# --- Embedding Model ---
+# --- Models ---
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
+# Cross-encoder reranker for higher accuracy
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
-# --- Hybrid Retrieval ---
+
+# --- Hybrid Retrieval + Reranking ---
 def retrieve_relevant_chunks(
     query: str,
     top_k: int = 5,
     vector_weight: float = 0.6,
     bm25_weight: float = 0.4,
+    use_reranker: bool = True,
 ) -> List[Dict[str, Any]]:
     """
-    Hybrid retrieval:
-      1. Vector search via FAISS (semantic)
-      2. Keyword search via BM25 (lexical)
-      3. Combine scores and return top-k
+    1. Retrieve candidates via FAISS (dense) + BM25 (sparse)
+    2. Rerank top candidates using CrossEncoder
     """
     for p in (FAISS_PATH, BM25_PATH, CHUNKS_PATH):
         if not p.exists():
@@ -66,7 +68,6 @@ def retrieve_relevant_chunks(
                 "Run: python datapop3.py --build-indices"
             )
 
-    # Load indices
     index = faiss.read_index(str(FAISS_PATH))
     with open(BM25_PATH, "rb") as f:
         bm25 = pickle.load(f)
@@ -77,41 +78,54 @@ def retrieve_relevant_chunks(
     metas   = data["metas"]
     n_docs  = len(texts)
 
-    # ---- 1) Vector search (FAISS) ----
+    # 1) Vector search via FAISS
     q_emb = embedder.encode([query], normalize_embeddings=True).astype("float32")
-    search_k = min(top_k * 3, n_docs)   # retrieve more, then combine
-    D, I = index.search(q_emb, search_k)
+    candidate_k = min(top_k * 4, n_docs)  # Retrieve 20 candidates for reranking
+    D, I = index.search(q_emb, candidate_k)
 
     vector_scores = {}
     for score, idx in zip(D[0], I[0]):
         if 0 <= idx < n_docs:
             vector_scores[idx] = float(score)
 
-    # ---- 2) BM25 keyword search ----
+    # 2) BM25 keyword search
     tokenized_q = query.lower().split()
-    bm25_scores = bm25.get_scores(tokenized_q)   # array length n_docs
+    bm25_scores = bm25.get_scores(tokenized_q)
 
-    # ---- 3) Combine scores ----
+    # 3) Hybrid Combination
     combined = {}
     for i in range(n_docs):
-        v = vector_scores.get(i, 0.0)              # cosine [0,1]
+        v = vector_scores.get(i, 0.0)
         b = float(bm25_scores[i]) if i < len(bm25_scores) else 0.0
-        b_norm = b / (1.0 + b)                     # squash BM25 to [0,1]
+        b_norm = b / (1.0 + b)
         combined[i] = vector_weight * v + bm25_weight * b_norm
 
-    # ---- 4) Pick top-k ----
-    top_indices = sorted(combined.keys(),
-                         key=lambda x: combined[x],
-                         reverse=True)[:top_k]
+    # Top candidates for reranking
+    candidate_indices = sorted(combined.keys(), key=lambda x: combined[x], reverse=True)[:candidate_k]
+
+    # 4) Cross-Encoder Reranking
+    if use_reranker and reranker and candidate_indices:
+        pairs = [(query, texts[idx]) for idx in candidate_indices]
+        rerank_scores = reranker.predict(pairs)
+
+        # Sort candidate indices by cross-encoder score
+        reranked_order = np.argsort(rerank_scores)[::-1][:top_k]
+        final_indices = [candidate_indices[i] for i in reranked_order]
+        scores_to_use = [float(rerank_scores[i]) for i in reranked_order]
+    else:
+        final_indices = candidate_indices[:top_k]
+        scores_to_use = [combined[i] for i in final_indices]
 
     results: List[Dict[str, Any]] = []
-    for i in top_indices:
+    for idx, score in zip(final_indices, scores_to_use):
         results.append({
-            "text":      texts[i],
-            "metadata":  metas[i],
-            "similarity": float(combined[i]),
+            "text":       texts[idx],
+            "metadata":   metas[idx],
+            "similarity": float(score),
         })
+
     return results
+
 
 # --- LLM Providers ---
 async def query_groq_async(prompt: str, model: str = GROQ_MODEL) -> str:
@@ -149,13 +163,14 @@ async def query_ollama_async(prompt: str, model: str = OLLAMA_MODEL) -> str:
 
 
 async def query_llm_async(prompt: str) -> str:
-    """Route to whichever provider is configured."""
     if LLM_PROVIDER == "groq":
         return await query_groq_async(prompt)
     if LLM_PROVIDER == "ollama":
         return await query_ollama_async(prompt)
     raise ValueError(f"Unknown LLM_PROVIDER: {LLM_PROVIDER}")
 
+
+# --- Generate Answer ---
 async def generate_answer_async(
     user_query: str,
     retrieved: List[Dict[str, Any]],
@@ -215,14 +230,13 @@ Answer:"""
     }
 
 
-# Synchronous wrapper
 def generate_answer(
     user_query: str,
     retrieved: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
     return asyncio.run(generate_answer_async(user_query, retrieved))
 
-# --- Example Usage ---
+
 if __name__ == "__main__":
     user_query = "what caused the Chennai flood"
 

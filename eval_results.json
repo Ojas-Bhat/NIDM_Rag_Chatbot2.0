@@ -1,0 +1,342 @@
+[
+  {
+    "id": 1,
+    "question": "What is the definition of a cyclone?",
+    "expected_answer": "A cyclone is a large-scale air mass rotating around a strong center of low pressure.",
+    "generated_answer": "A cyclone is a tropical cyclone\u2014a rotating storm system that forms over warm ocean waters. The term comes from the Greek word *Cyclos*, meaning \u201cthe coil of a snake,\u201d and such storms are also called hurricanes (Atlantic), typhoons (Pacific), Willy\u2011Willies (Australian seas), or simply cyclones (North Indian Ocean) [1].",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf"
+    ],
+    "scores": {
+      "relevance": 0.9,
+      "faithfulness": 0.9,
+      "accuracy": 0.7,
+      "reasoning": "The answer addresses the question and is factually correct, but it narrows the definition to tropical cyclones and adds extra details, so it is slightly less accurate to the expected general definition."
+    }
+  },
+  {
+    "id": 2,
+    "question": "What causes cyclones to form?",
+    "expected_answer": "Cyclones form due to warm ocean waters, moist air, and the Coriolis force.",
+    "generated_answer": "The context does not contain any information about what causes cyclones to form.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "IDR2014-17.pdf",
+      "india disaster report 2013.pdf"
+    ],
+    "scores": {
+      "relevance": 0.1,
+      "faithfulness": 1.0,
+      "accuracy": 0.0,
+      "reasoning": "The generated answer does not address the question at all, so relevance is very low. It accurately states that the context lacks information, so it is not hallucinating, giving it a high faithfulness score. However, it does not match the expected answer's content, resulting in an accuracy of zero."
+    }
+  },
+  {
+    "id": 3,
+    "question": "What are the main categories of cyclones in India?",
+    "expected_answer": "Depression; Deep Depression; Cyclonic Storm; Severe Cyclonic Storm; Very Severe Cyclonic Storm; Extremely Severe Cyclonic Storm; Super Cyclonic Storm.",
+    "generated_answer": "The answer is not provided in the supplied context.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "india disaster report 2013.pdf",
+      "india disaster report 2013.pdf"
+    ],
+    "scores": {
+      "relevance": 0.0,
+      "faithfulness": 1.0,
+      "accuracy": 0.0,
+      "reasoning": "The generated answer does not provide any of the cyclone categories, so it fails to address the question. It does not hallucinate any incorrect information, hence faithfulness is high. Accuracy is zero because the content does not match the expected answer."
+    }
+  },
+  {
+    "id": 4,
+    "question": "What is the minimum wind speed for a cyclonic storm?",
+    "expected_answer": "Wind speed must reach 63 kmph.",
+    "generated_answer": "The minimum wind speed for a cyclonic storm is **34 knots (approximately 62\u202fkm/h)**\u30101\u3011.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf"
+    ],
+    "scores": {
+      "relevance": 1.0,
+      "faithfulness": 0.95,
+      "accuracy": 0.95,
+      "reasoning": "The answer correctly identifies the minimum wind speed for a cyclonic storm and is close to the expected 63\u202fkm/h (62\u202fkm/h). It is relevant, factually supported, and matches the expected meaning with only a minor numerical difference."
+    }
+  },
+  {
+    "id": 5,
+    "question": "What wind speed defines a Very Severe Cyclonic Storm?",
+    "expected_answer": "Wind speeds of 118 to 165 kmph.",
+    "generated_answer": "A Very\u202fSevere Cyclonic Storm is defined by sustained wind speeds of **64 to 119\u202fknots (118\u2013221\u202fkm/h)**\u30102\u3011.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf"
+    ],
+    "scores": {
+      "relevance": 0.8,
+      "faithfulness": 0.5,
+      "accuracy": 0.5,
+      "reasoning": "The answer addresses the question but gives an incorrect upper bound (221\u202fkm/h vs expected 165\u202fkm/h), so it is partially relevant, not fully faithful, and only moderately accurate."
+    }
+  },
+  {
+    "id": 6,
+    "question": "In which region do most Indian cyclones originate?",
+    "expected_answer": "The Bay of Bengal region.",
+    "generated_answer": "Most Indian cyclones originate in the North Indian Ocean, with a large proportion forming over the Bay of\u202fBengal before striking the east coast of India. [1][2]",
+    "sources": [
+      "india disaster report 2013.pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "india disaster report 2013.pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 1.0,
+      "accuracy": 0.95,
+      "reasoning": "The answer correctly identifies the Bay of Bengal as the primary origin region for most Indian cyclones, matching the expected answer. It adds contextual detail about the North Indian Ocean, which does not alter the core information, so relevance, faithfulness, and accuracy are all high."
+    }
+  },
+  {
+    "id": 7,
+    "question": "Which coast of India is more vulnerable to cyclones?",
+    "expected_answer": "The East Coast of India.",
+    "generated_answer": "The eastern coast of India is the more vulnerable coast to cyclones.  \n- It is repeatedly highlighted as a vulnerable area where most cyclonic storms originate and strike, especially from the Bay of Bengal in the North Indian Ocean [1][3].  \n- The eastern coast, which includes the states of Andhra Pradesh and Odisha, is described as having a large population and being highly susceptible to cyclone\u2011related disasters [2].",
+    "sources": [
+      "india disaster report 2013.pdf",
+      "india disaster report 2013.pdf",
+      "TM_Cyclone_NIDM24 (2).pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 0.9,
+      "accuracy": 0.95,
+      "reasoning": "The answer directly states the East Coast as the vulnerable coast, adds factual context, and aligns with the expected answer."
+    }
+  },
+  {
+    "id": 8,
+    "question": "Name two states frequently affected by cyclones.",
+    "expected_answer": "Odisha and Andhra Pradesh.",
+    "generated_answer": "The context indicates that **Odisha** and **Andhra\u202fPradesh** are frequently affected by cyclones.  \n- Odisha is highlighted as having a large portion of its coastline impacted by cyclonic storms [3].  \n- The mention of the Krishna and Godavari deltas\u2014located in Andhra\u202fPradesh\u2014shows that this state also experiences cyclonic activity [2].",
+    "sources": [
+      "india disaster report 2013.pdf",
+      "india disaster report 2013.pdf",
+      "india disaster report 2013.pdf"
+    ],
+    "scores": {
+      "relevance": 1.0,
+      "faithfulness": 1.0,
+      "accuracy": 1.0,
+      "reasoning": "The answer correctly names Odisha and Andhra Pradesh, directly addressing the question. It provides factual support and matches the expected answer's meaning."
+    }
+  },
+  {
+    "id": 9,
+    "question": "What is storm surge?",
+    "expected_answer": "Storm surge is an abnormal rise in sea level caused by a cyclone.",
+    "generated_answer": "Storm surge is the abnormal rise in sea level that occurs during a tropical cyclone, caused by the interaction of the cyclone\u2019s winds, the sea, and the land. It results in sudden inundation and flooding of coastal areas, and is the major cause of devastation and loss of life in cyclone events. [1] [2]",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "india disaster report 2013.pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 1.0,
+      "accuracy": 0.9,
+      "reasoning": "The generated answer directly defines storm surge and explains its cause, fully addressing the question. It contains no hallucinated or incorrect information, so faithfulness is perfect. It adds extra context (effects and causes) but still preserves the core meaning of the expected answer, warranting a high accuracy score."
+    }
+  },
+  {
+    "id": 10,
+    "question": "Name one major impact of storm surge.",
+    "expected_answer": "Coastal flooding.",
+    "generated_answer": "One major impact of storm surge is the sudden inundation and flooding of coastal regions. [2]",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "NIDMJOURNAL_JanJun2021c.pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 1.0,
+      "accuracy": 0.95,
+      "reasoning": "The answer correctly identifies coastal flooding as a major impact of storm surge, matching the expected answer in meaning and providing a factual statement."
+    }
+  },
+  {
+    "id": 11,
+    "question": "What is the main hazard associated with cyclone winds?",
+    "expected_answer": "Destruction of buildings and infrastructure.",
+    "generated_answer": "The main hazard associated with cyclone winds is **destructive winds**\u30102\u3011.",
+    "sources": [
+      "ChennailFlood_NIDM2021 (1).pdf",
+      "india disaster report 2013.pdf",
+      "TM_Cyclone_NIDM24 (2).pdf"
+    ],
+    "scores": {
+      "relevance": 0.9,
+      "faithfulness": 1.0,
+      "accuracy": 0.8,
+      "reasoning": "The answer correctly identifies destructive winds as the main hazard, which aligns with the expected focus on damage to buildings and infrastructure. It is factually accurate but slightly less specific than the expected answer."
+    }
+  },
+  {
+    "id": 12,
+    "question": "What are cyclone preparedness measures?",
+    "expected_answer": "Evacuation, early warnings, shelters, and coastal embankments.",
+    "generated_answer": "Cyclone preparedness measures focus on both physical infrastructure and organisational readiness:\n\n1. **Design and maintenance of key infrastructure** \u2013  \n   * Buildings and multi\u2011purpose cyclone shelters  \n   * Road links, culverts and bridges  \n   * Canals, drains and surface\u2011water tanks  \n   * Saline embankments  \n   * Communication towers and power transmission networks\u30101\u3011\n\n2. **Standard Operating Procedures (SOPs) and response plans** \u2013  \n   * State\u2011level SOPs such as Andhra Pradesh\u2019s \u201cStandard Operating Procedures for Cyclone Management\u201d and Gujarat\u2019s \u201cCyclone Preparedness and Response Plan\u201d provide detailed guidance for authorities and communities\u30102\u3011\n\n3. **Crisis\u2011management techniques and community\u2011based preparedness** \u2013  \n   * Comparative studies show that proper crisis management and community\u2011based disaster preparedness reduce the hazardous aftermath of severe cyclones\u30103\u3011\n\nThese measures together aim to improve resilience against cyclones by strengthening infrastructure, ensuring clear operational procedures, and engaging local communities in preparedness activities.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "NIDMJOURNAL_JanJun2021c.pdf"
+    ],
+    "scores": {
+      "relevance": 0.7,
+      "faithfulness": 0.9,
+      "accuracy": 0.6,
+      "reasoning": "The answer covers some expected measures (shelters, embankments) but omits evacuation and early warnings, and adds extra details not in the expected answer. It appears factually sound, so faithfulness is high, but it does not fully match the concise expected answer, lowering accuracy."
+    }
+  },
+  {
+    "id": 13,
+    "question": "What is the role of IMD in cyclones?",
+    "expected_answer": "IMD monitors, predicts, and issues cyclone warnings.",
+    "generated_answer": "IMD\u2019s responsibilities in cyclone events include:\n\n- **Monitoring and forecasting**: It tracks the cyclone\u2019s position, direction, speed, central pressure, expected intensity, and probable track, and provides information on sea state, storm surge, wind, and other adverse weather conditions. [1]  \n- **Warning dissemination**: IMD installs special receivers in vulnerable coastal areas and uses the INSAT satellite\u2019s broadcast capacity to quickly transmit warnings to officials and the public. [2]  \n- **Coordination and preparedness**: It works with state agencies to ensure continuous communication, share technical forecast details, and support community preparedness efforts. [3]",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "India Disaster Report 2012.pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 1.0,
+      "accuracy": 0.95,
+      "reasoning": "The generated answer fully covers the core duties of IMD\u2014monitoring, forecasting, and warning dissemination\u2014while adding coordination details. It is factually correct and aligns closely with the expected answer's meaning."
+    }
+  },
+  {
+    "id": 14,
+    "question": "What is cyclone mitigation?",
+    "expected_answer": "Actions taken to reduce long-term cyclone risks.",
+    "generated_answer": "Cyclone mitigation refers to the actions and initiatives taken to reduce the loss of life, livelihoods, and property caused by cyclones.  It includes measures such as ensuring adequate shelters and community centres for evacuation, establishing committees to coordinate disaster response, and launching national projects to address cyclone risk and improve preparedness.  These efforts aim to minimise casualties and damage from future cyclonic events. [1] [2] [3]",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "NIDMJOURNAL_JanJun2021c.pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 1.0,
+      "accuracy": 0.95,
+      "reasoning": "The generated answer directly addresses cyclone mitigation, providing relevant details and factual information. It aligns closely with the expected definition, adding useful context without deviating from the core meaning."
+    }
+  },
+  {
+    "id": 15,
+    "question": "Which season sees most cyclones in India?",
+    "expected_answer": "Pre-monsoon and post-monsoon seasons.",
+    "generated_answer": "The context does not provide information about which season sees the most cyclones in India. None of the cited sources mention a seasonal pattern for cyclones.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "india disaster report 2013.pdf",
+      "ChennailFlood_NIDM2021 (1).pdf"
+    ],
+    "scores": {
+      "relevance": 0.2,
+      "faithfulness": 0.9,
+      "accuracy": 0.1,
+      "reasoning": "The generated answer does not address the question, stating that no information is available, which is irrelevant to the expected answer. It does not hallucinate facts, so faithfulness is high. However, it contradicts the expected answer, so accuracy is very low."
+    }
+  },
+  {
+    "id": 16,
+    "question": "What should communities do before a cyclone?",
+    "expected_answer": "Secure homes, store supplies, and follow evacuation warnings.",
+    "generated_answer": "Communities should take a number of preparatory actions before a cyclone strikes:\n\n1. **Plant trees at a safe distance from houses** to help break wind forces and reduce damage.  \n2. **Repair and reinforce existing shelters** well in advance of the cyclone season.  \n3. **Construct new cyclone shelters** at national, state, and regional levels, designing them with consideration of population density, transportation and communication access, distance from historically affected areas, and local topography.  \n4. **Engage in effective planning, allocate resources, and secure skilled labor** to ensure that all protective measures can be implemented smoothly.  \n5. **Coordinate with government agencies, relief organisations, and local communities** to align efforts and resources.  \n6. **Communicate risks to the community** (including any additional concerns such as COVID\u201119) so that everyone is aware of the precautions and evacuation routes.\n\nThese steps are drawn from the guidance in the Cyclone\u202f2024 context documents.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf"
+    ],
+    "scores": {
+      "relevance": 0.5,
+      "faithfulness": 0.8,
+      "accuracy": 0.3,
+      "reasoning": "The answer lists several preparatory actions, but omits the key points of securing homes, storing supplies, and following evacuation warnings that the expected answer highlights. It is generally factual but does not directly address the core elements of the expected response."
+    }
+  },
+  {
+    "id": 17,
+    "question": "What should people avoid during a cyclone?",
+    "expected_answer": "Avoid going outdoors or near the coastline.",
+    "generated_answer": "The provided context does not specify any particular actions or items that people should avoid during a cyclone.",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "India Disaster Report 2011.pdf"
+    ],
+    "scores": {
+      "relevance": 0.1,
+      "faithfulness": 1.0,
+      "accuracy": 0.0,
+      "reasoning": "The answer does not address the question, so relevance is low. It accurately states that no specific avoidance actions are given in the context, so it is faithful. It does not match the expected advice, so accuracy is zero."
+    }
+  },
+  {
+    "id": 18,
+    "question": "What is a cyclone shelter?",
+    "expected_answer": "A safe building designed to protect people during cyclones.",
+    "generated_answer": "A cyclone shelter is a structure built to provide safe refuge for people during a cyclone.  It is constructed at strategic locations\u2014taking into account population density, transportation and communication links, distance from historically affected areas, and local topography\u2014to limit casualties.  Adequate numbers of such shelters, along with community centres, schools, and places of worship that can be used as temporary shelters, are essential for cyclone risk reduction.  \n\nSources: [1], [2], [3]",
+    "sources": [
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "india disaster report 2013.pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 1.0,
+      "accuracy": 0.9,
+      "reasoning": "The generated answer correctly identifies a cyclone shelter as a safe refuge for people during cyclones, matching the core meaning of the expected answer. It adds relevant contextual details (location considerations, additional temporary shelters) that do not contradict the expected definition, thus maintaining high relevance and faithfulness. The extra information slightly expands beyond the concise expected answer, so accuracy is slightly lower but still high."
+    }
+  },
+  {
+    "id": 19,
+    "question": "Why is the Bay of Bengal more prone to cyclones?",
+    "expected_answer": "Because of warmer waters and favorable wind conditions.",
+    "generated_answer": "The Bay of Bengal is more prone to cyclones because it is the primary genesis region for a large share of the world\u2019s tropical cyclones and because the environmental conditions there\u2014especially warm sea\u2011surface temperatures\u2014favor cyclone formation and intensification.  According to the context, about 10\u202f% of all tropical cyclones worldwide form in the Bay of Bengal, and the Indian Ocean\u2019s rapid surface\u2011warming trend further enhances the likelihood and severity of cyclones that develop there.  These factors together make the Bay of Bengal a hotspot for cyclonic activity. [1][3]",
+    "sources": [
+      "india disaster report 2013.pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "TM_Cyclone_NIDM24 (2).pdf"
+    ],
+    "scores": {
+      "relevance": 0.95,
+      "faithfulness": 0.95,
+      "accuracy": 0.8,
+      "reasoning": "The answer directly addresses the question and includes the key factor of warm waters, matching the expected answer. It also adds additional factual context (genesis region, 10% of cyclones, surface warming) that is accurate but not present in the expected answer, slightly reducing the accuracy score."
+    }
+  },
+  {
+    "id": 20,
+    "question": "What is one post-cyclone recovery measure?",
+    "expected_answer": "Restoring power, roads, and essential services.",
+    "generated_answer": "One post\u2011cyclone recovery measure is **debris removal** \u2013 clearing wreckage and debris to enable rebuilding and restore normalcy in affected communities. [2]",
+    "sources": [
+      "NIDMJOURNAL_JanJun2021c.pdf",
+      "TM_Cyclone_NIDM24 (2).pdf",
+      "NIDMJOURNAL_JanJun2021c.pdf"
+    ],
+    "scores": {
+      "relevance": 0.9,
+      "faithfulness": 1.0,
+      "accuracy": 0.3,
+      "reasoning": "The answer correctly identifies a post\u2011cyclone recovery measure, but it differs from the expected answer's focus on restoring power, roads, and essential services."
+    }
+  }
+]
