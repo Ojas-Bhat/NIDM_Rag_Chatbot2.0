@@ -1,13 +1,30 @@
 import asyncio
 import logging
+import os
+import pickle
 import re
+from pathlib import Path
 from typing import Any, Dict, List
 
+import faiss
 import numpy as np
-from pymongo import MongoClient
+from dotenv import load_dotenv
+from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 
-# --- Optional async Ollama client ---
+load_dotenv()
+
+# --- Providers ---
+LLM_PROVIDER   = os.getenv("LLM_PROVIDER", "groq")        # "groq" | "ollama"
+GROQ_MODEL     = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+OLLAMA_MODEL   = os.getenv("OLLAMA_MODEL", "phi3:mini")
+
+try:
+    from groq import AsyncGroq
+    HAS_GROQ = True
+except ImportError:
+    HAS_GROQ = False
+
 try:
     from ollama import AsyncClient
     HAS_OLLAMA_PY = True
@@ -15,99 +32,134 @@ except ImportError:
     HAS_OLLAMA_PY = False
     import subprocess
 
-# --- Logging ---
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-# --- MongoDB Setup ---
-MONGO_URI = "mongodb://localhost:27017/"
-client = MongoClient(MONGO_URI)
-db = client["disaster_hub"]
-collection = db["documents"]
+SCRIPT_DIR  = Path(__file__).resolve().parent
+INDEX_DIR   = SCRIPT_DIR / "indices"
+FAISS_PATH  = INDEX_DIR / "faiss_index.bin"
+BM25_PATH   = INDEX_DIR / "bm25.pkl"
+CHUNKS_PATH = INDEX_DIR / "chunks_meta.pkl"
+
+
 
 # --- Embedding Model ---
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 
-# --- Query Filter Extraction ---
-def extract_filters_from_query(query: str) -> Dict[str, Any]:
-    filters: Dict[str, Any] = {}
+# --- Hybrid Retrieval ---
+def retrieve_relevant_chunks(
+    query: str,
+    top_k: int = 5,
+    vector_weight: float = 0.6,
+    bm25_weight: float = 0.4,
+) -> List[Dict[str, Any]]:
+    """
+    Hybrid retrieval:
+      1. Vector search via FAISS (semantic)
+      2. Keyword search via BM25 (lexical)
+      3. Combine scores and return top-k
+    """
+    for p in (FAISS_PATH, BM25_PATH, CHUNKS_PATH):
+        if not p.exists():
+            raise FileNotFoundError(
+                f"Index file missing: {p}\n"
+                "Run: python datapop3.py --build-indices"
+            )
 
-    # Year detection (e.g., "2018 floods in Kerala")
-    year_match = re.search(r"\b(19[0-9]{2}|20[0-9]{2})\b", query)
-    if year_match:
-        filters["metadata.year"] = int(year_match.group(0))
+    # Load indices
+    index = faiss.read_index(str(FAISS_PATH))
+    with open(BM25_PATH, "rb") as f:
+        bm25 = pickle.load(f)
+    with open(CHUNKS_PATH, "rb") as f:
+        data = pickle.load(f)
 
-    # Disaster type detection (simple keyword matching)
-    disaster_types = [
-        "Flood", "Earthquake", "Cyclone", "Landslide",
-        "Drought", "Tsunami", "Pandemic", "Storm", "Fire"
-    ]
-    for dtype in disaster_types:
-        if dtype.lower() in query.lower():
-            filters["metadata.disaster"] = dtype
-            break
+    texts   = data["texts"]
+    metas   = data["metas"]
+    n_docs  = len(texts)
 
-    return filters
+    # ---- 1) Vector search (FAISS) ----
+    q_emb = embedder.encode([query], normalize_embeddings=True).astype("float32")
+    search_k = min(top_k * 3, n_docs)   # retrieve more, then combine
+    D, I = index.search(q_emb, search_k)
 
-# --- Retrieve Relevant Chunks ---
-def retrieve_relevant_chunks(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-    query_embedding = embedder.encode([query])[0]
+    vector_scores = {}
+    for score, idx in zip(D[0], I[0]):
+        if 0 <= idx < n_docs:
+            vector_scores[idx] = float(score)
 
-    filters = extract_filters_from_query(query)
-    mongo_query = filters if filters else {}
+    # ---- 2) BM25 keyword search ----
+    tokenized_q = query.lower().split()
+    bm25_scores = bm25.get_scores(tokenized_q)   # array length n_docs
 
-    docs = list(
-        collection.find(
-            mongo_query,
-            {"text": 1, "embedding": 1, "metadata": 1, "_id": 0}
-        )
-    )
+    # ---- 3) Combine scores ----
+    combined = {}
+    for i in range(n_docs):
+        v = vector_scores.get(i, 0.0)              # cosine [0,1]
+        b = float(bm25_scores[i]) if i < len(bm25_scores) else 0.0
+        b_norm = b / (1.0 + b)                     # squash BM25 to [0,1]
+        combined[i] = vector_weight * v + bm25_weight * b_norm
 
-    if not docs:
-        return []
+    # ---- 4) Pick top-k ----
+    top_indices = sorted(combined.keys(),
+                         key=lambda x: combined[x],
+                         reverse=True)[:top_k]
 
-    embeddings = np.array([doc["embedding"] for doc in docs])
-    doc_texts = [doc["text"] for doc in docs]
-    doc_metadata = [doc.get("metadata", {}) for doc in docs]
-
-    # Cosine similarity
-    query_norm = query_embedding / np.linalg.norm(query_embedding)
-    doc_norms = embeddings / np.linalg.norm(embeddings, axis=1, keepdims=True)
-    sims = np.dot(doc_norms, query_norm)
-
-    top_indices = np.argsort(sims)[::-1][:top_k]
     results: List[Dict[str, Any]] = []
     for i in top_indices:
         results.append({
-            "text": doc_texts[i],
-            "metadata": doc_metadata[i],
-            "similarity": float(sims[i]),
+            "text":      texts[i],
+            "metadata":  metas[i],
+            "similarity": float(combined[i]),
         })
     return results
 
-# --- Async Ollama Generation ---
-async def query_ollama_async(model: str, prompt: str) -> str:
+# --- LLM Providers ---
+async def query_groq_async(prompt: str, model: str = GROQ_MODEL) -> str:
+    if not HAS_GROQ:
+        raise RuntimeError("groq package not installed. Run: pip install groq")
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise RuntimeError("GROQ_API_KEY not set. Add it to your .env file.")
+
+    client = AsyncGroq(api_key=api_key)
+    response = await client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.1,
+        max_tokens=1024,
+    )
+    return response.choices[0].message.content
+
+
+async def query_ollama_async(prompt: str, model: str = OLLAMA_MODEL) -> str:
     if HAS_OLLAMA_PY:
-        ollama_client = AsyncClient(host="http://localhost:11434")
-        response = await ollama_client.chat(
+        client = AsyncClient(host="http://localhost:11434")
+        response = await client.chat(
             model=model,
             messages=[{"role": "user", "content": prompt}],
             stream=False,
         )
         return response["message"]["content"]
-    else:
-        # Fallback to subprocess (blocking, but works without the package)
-        result = subprocess.run(
-            ["ollama", "run", model],
-            input=prompt.encode("utf-8"),
-            capture_output=True,
-        )
-        return result.stdout.decode("utf-8")
+    result = subprocess.run(
+        ["ollama", "run", model],
+        input=prompt.encode("utf-8"),
+        capture_output=True,
+    )
+    return result.stdout.decode("utf-8")
+
+
+async def query_llm_async(prompt: str) -> str:
+    """Route to whichever provider is configured."""
+    if LLM_PROVIDER == "groq":
+        return await query_groq_async(prompt)
+    if LLM_PROVIDER == "ollama":
+        return await query_ollama_async(prompt)
+    raise ValueError(f"Unknown LLM_PROVIDER: {LLM_PROVIDER}")
 
 async def generate_answer_async(
     user_query: str,
     retrieved: List[Dict[str, Any]],
-    model: str = "llama3.2:1b",
+    model: str = "phi3:mini",   # <-- small model for low RAM
 ) -> Dict[str, Any]:
     if not retrieved:
         return {
@@ -116,16 +168,15 @@ async def generate_answer_async(
             "context": "",
         }
 
-    # Build context with numbered citations
     context_parts: List[str] = []
     sources: List[Dict[str, Any]] = []
 
     for idx, item in enumerate(retrieved, start=1):
         m = item["metadata"]
-        citation_label = f"[{idx}]"
+        label = f"[{idx}]"
 
         source_info = {
-            "label": citation_label,
+            "label": label,
             "document": m.get("filename", m.get("source", "Unknown")),
             "disaster": m.get("disaster", "Unknown"),
             "year": m.get("year", "Unknown"),
@@ -135,7 +186,7 @@ async def generate_answer_async(
         sources.append(source_info)
 
         context_parts.append(
-            f"{citation_label} [{source_info['disaster']} {source_info['year']}]\n{item['text']}"
+            f"{label} [{source_info['disaster']} {source_info['year']}]\n{item['text']}"
         )
 
     context = "\n\n".join(context_parts)
@@ -143,7 +194,7 @@ async def generate_answer_async(
     prompt = f"""You are a disaster knowledge assistant.
 Answer the question based ONLY on the context below.
 If the answer is not in the context, say so clearly.
-Cite your sources using the bracket numbers like [1], [2] that appear before each source text.
+Cite your sources using bracket numbers like [1], [2] that appear before each source text.
 
 Context:
 {context}
@@ -153,9 +204,9 @@ Question: {user_query}
 Answer:"""
 
     try:
-        answer = await query_ollama_async(model, prompt)
+        answer = await query_llm_async(prompt)
     except Exception as exc:
-        logger.error("Ollama generation failed: %s", exc)
+        logger.error("LLM generation failed: %s", exc)
         answer = f"Error generating answer: {exc}"
 
     return {
@@ -164,29 +215,33 @@ Answer:"""
         "context": context,
     }
 
-# Synchronous wrapper (useful for quick scripts)
+
+# Synchronous wrapper
 def generate_answer(
     user_query: str,
     retrieved: List[Dict[str, Any]],
-    model: str = "llama3",
+    model: str = "phi3:mini",
 ) -> Dict[str, Any]:
     return asyncio.run(generate_answer_async(user_query, retrieved, model))
 
+
 # --- Example Usage ---
 if __name__ == "__main__":
-    user_query = "Tell me about the Chennai Flood"
+    user_query = "what caused the Chennai flood"
 
-    retrieved = retrieve_relevant_chunks(user_query, top_k=5)
+    try:
+        retrieved = retrieve_relevant_chunks(user_query, top_k=5)
+    except FileNotFoundError as exc:
+        print(exc)
+        retrieved = []
+
     if not retrieved:
         print("No relevant documents found.")
     else:
-        result = generate_answer(user_query, retrieved, model="llama3")
+        result = generate_answer(user_query, retrieved)
         print("\n=== ANSWER ===\n")
         print(result["answer"])
         print("\n=== SOURCES ===\n")
         for s in result["sources"]:
-            print(
-                f"{s['label']} {s['document']} | {s['disaster']} {s['year']} | sim={s['similarity']:.3f}"
-            )
-            print(f"   {s['snippet']}")
-            print()
+            print(f"{s['label']} {s['document']} | {s['disaster']} {s['year']} | sim={s['similarity']:.3f}")
+            print(f"   {s['snippet']}\n")
